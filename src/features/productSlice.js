@@ -22,10 +22,28 @@ const productSlice = createSlice({
       state.selectedProduct = null;
       // localStorage.removeItem("selectedProduct");
     },
+    addProduct: (state, action) => {
+      state.products.push(action.payload);
+    },
+    updateProduct: (state, action) => {
+      const index = state.products.findIndex(
+        (p) => p._id === action.payload._id,
+      );
+      if (index !== -1) state.products[index] = action.payload;
+    },
+    deleteProduct: (state, action) => {
+      state.products = state.products.filter((p) => p._id !== action.payload);
+    },
   },
 });
 
-export const { setProduct, setSelectedProduct, clearSelectedProduct } =
-  productSlice.actions;
+export const {
+  setProduct,
+  setSelectedProduct,
+  clearSelectedProduct,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+} = productSlice.actions;
 
 export default productSlice.reducer;

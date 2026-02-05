@@ -1,20 +1,17 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../features/userSlice";
-// import { getProducts } from "../API";
 import { baseURL } from "../Constrant";
 import { FireApi } from "../hooks/useRequest";
-import { toast } from "react-toastify";
+import Navbar from "./Navbar";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
-  const { user, token } = useSelector((state) => state.user);
+  const { token } = useSelector((state) => state.user);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  // const checkUser=user||JSON.parse(localStorage.getItem('user'))
 
+  // const checkUser=user||JSON.parse(localStorage.getItem('user'))
 
   const getProducts = async () => {
     try {
@@ -38,52 +35,32 @@ const Home = () => {
 
   useEffect(() => {
     getProducts();
-    console.log('check,111111')
   }, []);
-
-  const handleclick = (e) => {
-    e.preventDefault();
-    dispatch(logout());
-    toast.info("You have been logged out.");
-    navigate("/");
-  };
 
   if (loading) {
     return <h1>loading...</h1>;
   }
 
   return (
-    <div className="min-h-screen p-10">
-      <div className="flex justify-between">
-        <h1 className="text-3xl font-bold text-gray-700">
-          {/* Welcome, {checkUser?.name} */}
-          Welcome, {user?.name}
-          {/* {products.map((item)=>( <div key={item._id}> <h1>{item.name}</h1></div> ))} */}
-        </h1>
-        <div>
-          <button
-            onClick={handleclick}
-            className="bg-blue-500 text-white p-3 rounded-md hover:bg-blue-600"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-10">
+    <div className="">
+      <Navbar />
+      <div className="grid gap-6 m-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {products?.map((item) => (
           <div
             key={item?._id}
             onClick={() => navigate(`/products/${item?._id}`)}
-            className="border rounded-lg shadow p-4 hover:shadow-lg transition"
+            className="rounded-2xl flex flex-col  transition hover:scale-105 hover:shadow-xl duration-300"
           >
             <img
               src={`${baseURL}${item?.image[0]}`}
-              className="w-full h-48 object-cover mb-2"
+              className="w-full h-60 object-cover rounded-t-2xl"
               alt=""
             />
-            <h1 className="font-bold text-gray-700 text-lg">{item?.name}</h1>
-            <p className="text-gray-600">{item?.description}</p>
-            <p className="text-gray-700 font-bold mt-2">{item?.price}</p>
+            <div className="p-4">
+              <h1 className="font-bold text-gray-700 text-lg">{item?.name}</h1>
+              <p className="text-gray-600">{item?.description}</p>
+              <p className="text-gray-700 font-bold mt-2">${item?.price}</p>
+            </div>
           </div>
         ))}
       </div>

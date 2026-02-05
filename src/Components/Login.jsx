@@ -35,8 +35,8 @@ const Login = () => {
       toast.success(`Welcome ${user.name}!`);
       dispatch(setUser({ token, user }));
       
-      // console.log("token:", token);
-      // console.log("User: ", user);
+      console.log("token:", token);
+      console.log("User: ", user);
 
       if (user.role === "admin") {
         navigate("/admin");

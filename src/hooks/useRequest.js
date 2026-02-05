@@ -1,6 +1,11 @@
-export const baseURL = "http://192.168.18.129:3000";
+import { baseURL } from "../Constrant";
 
-export const FireApi = async (endpoint, method, body=null, Headers=null) => {
+export const FireApi = async (
+  endpoint,
+  method,
+  body = null,
+  Headers = null,
+) => {
   const headers = {
     "content-type": "application/json",
   };
@@ -10,11 +15,11 @@ export const FireApi = async (endpoint, method, body=null, Headers=null) => {
     body: body ? JSON.stringify(body) : null,
   };
 
-  const response=await fetch(`${baseURL}/${endpoint}`,options);
-  if(response.ok && response.status>=200 && response.status<=301 ){
-    return response.json()
-  }else{
-    const json= response.json()
-    return json
+  const response = await fetch(`${baseURL}/${endpoint}`, options);
+  if (response.ok && response.status >= 200 && response.status <= 301) {
+    return response.json();
+  } else {
+    const json = response.json();
+    return json;
   }
 };
