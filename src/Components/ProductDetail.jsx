@@ -4,8 +4,11 @@ import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../features/cartSlice";
 import { toast } from "react-toastify";
+import Slider from "react-slick";
 import StripePayment from "./StripePayment";
 import Navbar from "./Navbar";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 // const KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
@@ -38,6 +41,17 @@ const ProductDetail = () => {
       getProductById(id, token);
     }
   }, []);
+
+  const sliderSetting = {
+    dots: true,
+    infinite: true,
+    speed: 700,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    arrows: false,
+    autoplay: true,
+    autoplaySpeed: 2500,
+  };
 
   // const handlePayment = async () => {
   //   try {
@@ -80,10 +94,31 @@ const ProductDetail = () => {
     );
   };
   return (
-    <div className="">
+    <div>
       <Navbar />
       <div className="p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col lg:flex-row gap-10 bg-gray-50">
-        <div className="flex flex-col md:flex-row lg:flex-row gap-6 w-full lg:w-2/3">
+        <div className="flex flex-col md:flex-row lg:flex-row gap-6 w-full lg:w-[50%] shadow-lg">
+          <div className="flex flex-col md:flex-row lg:flex-row gap-6 w-full">
+            {product?.image?.length > 0 ? (
+              <Slider {...sliderSetting} className="w-full">
+                {product.image.map((img, index) => (
+                  <div key={index}>
+                    <img
+                      src={`${baseURL}${img}`}
+                      alt={`${product.name}-${index}`}
+                      className="w-full h-64 sm:h-80 md:h-[400px] object-cover rounded-2xl"
+                    />
+                  </div>
+                ))}
+              </Slider>
+            ) : (
+              <div className="w-full h-64 bg-gray-200 flex items-center justify-center rounded-2xl">
+                <p>No Image</p>
+              </div>
+            )}
+          </div>
+        </div>
+        {/* <div className="flex flex-col md:flex-row lg:flex-row gap-6 w-full lg:w-2/3">
           <div className="flex flex-row md:flex-col justify-center items-center gap-3 w-auto md:w-auto max-w-full">
             {[0, 1, 2].map((index) => (
               <img
@@ -101,10 +136,9 @@ const ProductDetail = () => {
               className="w-full h-64 sm:h-80 md:h-[400px] object-cover rounded-xl shadow-md"
             />
           </div>
-        </div>
+        </div> */}
 
         <div className="flex-1 flex flex-col justify-between bg-white rounded-2xl shadow-lg p-6 sm:p-8 md:p-10 hover:shadow-xl">
-        
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
               {product?.name}

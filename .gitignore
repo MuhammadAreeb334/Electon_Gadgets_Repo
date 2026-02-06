@@ -25,6 +25,7 @@ dist-ssr
 *.sw?
 
 # .gitignore
-.env
-.env
 node_modules
+config.bat
+temp_auto_push.bat
+temp_interactive_push.bat
