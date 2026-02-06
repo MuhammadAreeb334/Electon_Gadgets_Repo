@@ -23,19 +23,26 @@ const AdminPage = () => {
   const products = useSelector((state) => state.product.products);
   const { user, token } = useSelector((state) => state.user);
   const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    image: null,
+  });
+
   useEffect(() => {
-    if (isModalOpen) {
+    if (isAddModalOpen || isEditModalOpen) {
       document.body.classList.add("overflow-hidden");
     } else {
       document.body.classList.remove("overflow-hidden");
     }
     return () => document.body.classList.remove("overflow-hidden");
-  }, [isModalOpen]);
+  }, [isAddModalOpen, isEditModalOpen]);
 
   const getProducts = async () => {
     try {
@@ -54,37 +61,29 @@ const AdminPage = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     getProducts();
   }, []);
 
+
   const handleDelete = async (productId) => {
-    if (!window.confirm("Are you sure you want to delete this product?"))
-      return;
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
       const headers = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       };
-      const response = await FireApi(
-        `products/deleteproduct/${productId}`,
-        "DELETE",
-        null,
-        headers,
-      );
-      console.log("DELETE response:", response);
-
-      // if (response.success || response.status == 200) {
+      await FireApi(`products/deleteproduct/${productId}`, "DELETE", null, headers);
       dispatch(deleteProduct(productId));
       toast.success("Product deleted successfully!");
-      // } else {
-      //   toast.error("Failed to delete product");
-      // }
     } catch (err) {
       console.log(err);
       toast.error("Something went wrong!");
     }
   };
+
+  
   const handleLogout = (e) => {
     e.preventDefault();
     dispatch(logout());
@@ -92,21 +91,14 @@ const AdminPage = () => {
     navigate("/");
   };
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    image: null,
-  });
-
+  
   const handleAddNew = () => {
-    setIsEditing(false);
     setFormData({ name: "", description: "", price: "", image: null });
-    setIsModalOpen(true);
+    setIsAddModalOpen(true);
   };
 
+  
   const handleEdit = (product) => {
-    setIsEditing(true);
     setCurrentProduct(product);
     setFormData({
       name: product?.name,
@@ -114,20 +106,104 @@ const AdminPage = () => {
       price: product?.price,
       image: null,
     });
-    setIsModalOpen(true);
+    setIsEditModalOpen(true);
   };
 
+  
   const handleInputChange = (e) => {
-    
+    const { name, value, files } = e.target;
+    if (name === "image") {
+      setFormData({ ...formData, image: files });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
-  const handleSubmit = (e) => {
+  
+  const handleSubmitAdd = async (e) => {
     e.preventDefault();
-    
+    try {
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+      const data = new FormData();
+      data.append("name", formData.name);
+      data.append("description", formData.description);
+      data.append("price", formData.price);
+
+      if (formData.image && formData.image.length > 0) {
+        for (let i = 0; i < formData.image.length; i++) {
+          data.append("image", formData.image[i]);
+        }
+      }
+
+      const response = await fetch(`${baseURL}/products/addProduct`, {
+        method: "POST",
+        headers,
+        body: data,
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        dispatch(addProduct(result.data));
+        toast.success("Product added successfully!");
+        setIsAddModalOpen(false);
+        setFormData({ name: "", description: "", price: "", image: null });
+      } else {
+        toast.error("Failed to add product");
+        console.log(result.message)
+      }
+    } catch (err) {
+      console.error("Add Error:", err);
+      toast.error("Error adding product");
+    }
+  };
+
+  
+  const handleSubmitEdit = async (e) => {
+    e.preventDefault();
+    try {
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+      const data = new FormData();
+      data.append("name", formData.name);
+      data.append("description", formData.description);
+      data.append("price", formData.price);
+
+      if (formData.image && formData.image.length > 0) {
+        for (let i = 0; i < formData.image.length; i++) {
+          data.append("image", formData.image[i]);
+        }
+      }
+
+      const response = await fetch(
+        `${baseURL}/products/updateProduct/${currentProduct._id}`,
+        {
+          method: "PUT",
+          headers,
+          body: data,
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        dispatch(updateProduct(result.data));
+        toast.success("Product updated successfully!");
+        setIsEditModalOpen(false);
+      } else {
+        toast.error("Failed to update product");
+        console.log(result.message)
+      }
+    } catch (err) {
+      console.error("Update Error:", err);
+      toast.error("Error updating product");
+    }
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
+      
       <div
         className={`fixed inset-0 bg-black/40 z-40 md:hidden transition-opacity ${
           sidebarOpen
@@ -280,96 +356,122 @@ const AdminPage = () => {
         </div>
       </main>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40 backdrop-blur-sm animate-fadeIn p-2 sm:p-0">
-          <div className="bg-white rounded-lg w-full max-w-sm sm:w-96 p-4 sm:p-6 shadow-lg relative">
-            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-700">
-              {isEditing ? "Edit Product" : "Add New Product"}
-            </h2>
+      {isAddModalOpen && (
+        <Modal
+          title="Add New Product"
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmitAdd}
+          onClose={() => setIsAddModalOpen(false)}
+          actionText="Add"
+          color="blue"
+        />
+      )}
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-3 sm:space-y-4 text-sm sm:text-base"
-            >
-              <div>
-                <label className="block font-medium text-gray-600 mb-1">
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 focus:ring focus:ring-blue-100 text-sm sm:text-base"
-                  placeholder="Enter product name"
-                />
-              </div>
-              <div>
-                <label className="block font-medium text-gray-600 mb-1">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 focus:ring focus:ring-blue-100 text-sm sm:text-base"
-                  placeholder="Enter description"
-                />
-              </div>
-              <div>
-                <label className="block font-medium text-gray-600 mb-1">
-                  Price
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 focus:ring focus:ring-blue-100 text-sm sm:text-base"
-                  placeholder="Enter price"
-                />
-              </div>
-              <div>
-                <label className="block font-medium text-gray-600 mb-1">
-                  Image
-                </label>
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 sm:gap-3 mt-3 sm:mt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-300 rounded-md hover:bg-gray-400 transition text-sm sm:text-base"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm sm:text-base"
-                >
-                  {isEditing ? "Update" : "Add"}
-                </button>
-              </div>
-            </form>
-
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-2 sm:top-3 right-2 sm:right-3 text-gray-500 hover:text-gray-700 text-lg"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+      {isEditModalOpen && (
+        <Modal
+          title="Edit Product"
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmitEdit}
+          onClose={() => setIsEditModalOpen(false)}
+          actionText="Update"
+          color="green"
+        />
       )}
     </div>
   );
 };
+
+
+const Modal = ({
+  title,
+  formData,
+  handleInputChange,
+  handleSubmit,
+  onClose,
+  actionText,
+  color,
+}) => (
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40 backdrop-blur-sm p-2 sm:p-0">
+    <div className="bg-white rounded-lg w-full max-w-sm sm:w-96 p-4 sm:p-6 shadow-lg relative">
+      <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-700">
+        {title}
+      </h2>
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        <div>
+          <label className="block font-medium text-gray-600 mb-1">
+            Product Name
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring focus:ring-blue-100"
+            placeholder="Enter product name"
+          />
+        </div>
+        <div>
+          <label className="block font-medium text-gray-600 mb-1">
+            Description
+          </label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring focus:ring-blue-100"
+            placeholder="Enter description"
+          />
+        </div>
+        <div>
+          <label className="block font-medium text-gray-600 mb-1">
+            Price
+          </label>
+          <input
+            type="number"
+            name="price"
+            value={formData.price}
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring focus:ring-blue-100"
+            placeholder="Enter price"
+          />
+        </div>
+        <div>
+          <label className="block font-medium text-gray-600 mb-1">Image</label>
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            multiple
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+          />
+        </div>
+        <div className="flex justify-end gap-3 mt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className={`px-4 py-2 bg-${color}-600 text-white rounded-md hover:bg-${color}-700 transition`}
+          >
+            {actionText}
+          </button>
+        </div>
+      </form>
+      <button
+        onClick={onClose}
+        className="absolute top-2 right-3 text-gray-500 hover:text-gray-700 text-lg"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+);
 
 export default AdminPage;
